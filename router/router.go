@@ -1,32 +1,34 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/dayvsonspacca/go-phone-validation/model"
+	"github.com/dayvsonspacca/go-phone-validation/handler"
+	"github.com/dayvsonspacca/go-phone-validation/request"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-func Initialize(phoneValidationQueue chan model.PhoneValidationRequest) *gin.Engine {
+func Initialize(phoneValidationQueue chan handler.PhoneValidationData) *gin.Engine {
 	router := gin.New()
 
 	router.POST("/api/v1/validate-phone-number", func(ctx *gin.Context) {
-		var phoneValidationRequest model.PhoneValidationRequest
-
-		if err := ctx.ShouldBindJSON(&phoneValidationRequest); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Bad Request"})
+		phoneValidationRequest, err := request.ParsePhoneValidationRequest(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
+		token := uuid.New().String()
 
-		phoneValidationRequest.Token = uuid.New().String()
-		// [ TODO ]: Validate fields
+		phoneValidationQueue <- handler.PhoneValidationData{
+			PhoneValidationRequest: phoneValidationRequest,
+			Token:                  token,
+		}
 
-		phoneValidationQueue <- phoneValidationRequest
+		fmt.Printf("New PhoneValidationData added to queue, token: %s\n", token)
 
-		ctx.JSON(200, gin.H{
-			"token": phoneValidationRequest.Token,
-		})
+		ctx.JSON(http.StatusOK, gin.H{"token": token})
 	})
 
 	return router
