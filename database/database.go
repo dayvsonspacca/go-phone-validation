@@ -16,11 +16,12 @@ func Initialize() {
 
 func createSchema(db *sql.DB) {
 	query := `
-	CREATE TABLE IF NOT EXISTS valitaded_phones (
+	CREATE TABLE IF NOT EXISTS validated_phones (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		status TEXT CHECK(status IN ('MATCHED', 'UNMATCHED')) NOT NULL,
 		phone TEXT,
-		national_identy_number TEXT
+		national_identy_number TEXT,
+		UNIQUE(status, phone, national_identy_number)
 	);`
 
 	_, err := db.Exec(query)

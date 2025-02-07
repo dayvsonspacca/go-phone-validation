@@ -31,5 +31,15 @@ func Initialize(phoneValidationQueue chan handler.PhoneValidationData) *gin.Engi
 		ctx.JSON(http.StatusOK, gin.H{"token": token})
 	})
 
+	router.POST("/api/v1/new-validated-phone-number", func(ctx *gin.Context) {
+		newPhoneValidatedRequest, err := request.ParseNewPhoneValidatedRequest(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		id := handler.HandlerNewValidatedPhoneNumber(newPhoneValidatedRequest)
+		ctx.JSON(http.StatusOK, gin.H{"id": id})
+	})
 	return router
 }
