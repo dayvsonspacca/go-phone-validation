@@ -17,7 +17,7 @@ func ParsePhoneValidationRequest(ctx *gin.Context) (PhoneValidationRequest, erro
 
 	if err := ctx.ShouldBindJSON(&phoneValidationRequest); err != nil {
 		// [ TODO ] Enhance error messages
-		return PhoneValidationRequest{}, fmt.Errorf("%v", err)
+		return PhoneValidationRequest{}, fmt.Errorf("error in ParsePhoneValidationRequest: %v", err)
 	}
 
 	// [ TODO ] Add fields validation

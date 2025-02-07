@@ -2,10 +2,12 @@ package handler
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/dayvsonspacca/go-phone-validation/database"
 	"github.com/dayvsonspacca/go-phone-validation/request"
 )
 
@@ -28,6 +30,8 @@ type PhoneValidationData struct {
 }
 
 func HandlerPhoneValidation(phoneValidationData PhoneValidationData) {
+	fmt.Printf("Handling PhoneValidationData with token: %s\n", phoneValidationData.Token)
+
 	response := PhoneValidationResponse{
 		Token:  phoneValidationData.Token,
 		Result: validatePhoneNumber(phoneValidationData.PhoneValidationRequest.Phone, phoneValidationData.PhoneValidationRequest.NationalIdentyNumber),
@@ -37,9 +41,22 @@ func HandlerPhoneValidation(phoneValidationData PhoneValidationData) {
 }
 
 func validatePhoneNumber(phone string, nationalIdentyNumber string) PhoneValidationResult {
-	// Access database, check if exists an entry with same number phone and person identy number.
+	db := database.GetConnection()
 
-	return MATCHED
+	var status string
+	err := db.QueryRow(
+		"SELECT status FROM validated_phones WHERE phone = ? AND national_identy_number = ? LIMIT 1", phone, nationalIdentyNumber,
+	).Scan(&status)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return NO_DATA
+		}
+
+		return NO_DATA // [ TODO ] - Maybe not return NO_DATA when other erro than ErrNoRows occur
+	}
+
+	return PhoneValidationResult(status)
 }
 
 func sendPhoneValidationResponse(callback_url string, response PhoneValidationResponse) {
@@ -51,7 +68,7 @@ func sendPhoneValidationResponse(callback_url string, response PhoneValidationRe
 
 	resp, err := http.Post(callback_url, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Printf("Failed to send callback response: %s", err.Error())
+		fmt.Printf("Failed to send callback response: %s\n", err.Error())
 		return
 	}
 	defer resp.Body.Close()

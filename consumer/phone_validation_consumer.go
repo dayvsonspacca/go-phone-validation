@@ -7,7 +7,7 @@ import (
 )
 
 func InitializePhoneValidationConsumer(phoneValidationQueue chan handler.PhoneValidationData) {
-	fmt.Println("PhoneValidationConsume started")
+	fmt.Println("PhoneValidationConsume started.")
 
 	go func() {
 		for {
